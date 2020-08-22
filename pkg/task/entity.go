@@ -1,6 +1,7 @@
 package task
 
 type Payload struct {
+	Prefix   []byte `json:"prefix"`
 	Start    []byte `json:"start"`
 	Count    uint64 `json:"count"`
 	Alphabet []byte `json:"alphabet"`
