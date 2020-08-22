@@ -3,21 +3,28 @@ package task
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"sync"
 )
 
 type Service struct {
-	tasks map[uint64]Task
-
+	solution []byte
+	tasks    map[uint64]*Task
+	mutex    sync.Mutex
 }
 
-func (s *Service) AddTask(task Task) {
+func (s *Service) AddTask(task *Task) {
+	s.mutex.Lock()
+	newId := len(s.tasks)
+	task.Id = uint64(newId)
+
 	s.tasks[task.Id] = task
+	s.mutex.Unlock()
 }
 
 func (s *Service) decrypt(task *Task, key []byte) *Result {
 	decryptedData := make([]byte, 0)
 
-	if task.AlgorithmUsed == AES {
+	if task.AlgorithmUsed == "AES" {
 		c, err := aes.NewCipher(key)
 		if err != nil {
 			return nil
@@ -64,7 +71,7 @@ func (s *Service) decrypt(task *Task, key []byte) *Result {
 	return nil
 }
 
-func (s *Service) BruteForce(task Task) *Result {
+func (s *Service) BruteForce(task *Task) *Result {
 	payload := task.PayloadData
 	alphabetSize := len(payload.Alphabet)
 	alphabet := payload.Alphabet
@@ -86,7 +93,7 @@ func (s *Service) BruteForce(task Task) *Result {
 
 	for i := uint64(0); i < payload.Count; i++ {
 		// fmt.Println("Trying password: ", key)
-		result := s.decrypt(&task, append(payload.Prefix, key...))
+		result := s.decrypt(task, append(payload.Prefix, key...))
 		if result != nil {
 			return result
 		}
@@ -95,7 +102,7 @@ func (s *Service) BruteForce(task Task) *Result {
 		prependNewDigit := true
 
 		for j := n - 1; j >= 0; j-- {
-			if normalizedKey[j] == byte(alphabetSize - 1) {
+			if normalizedKey[j] == byte(alphabetSize-1) {
 				normalizedKey[j] = 0
 				key[j] = alphabet[0]
 			} else {
@@ -115,8 +122,50 @@ func (s *Service) BruteForce(task Task) *Result {
 	return nil
 }
 
+func (s *Service) ExecuteTask(task *Task) *Result {
+	result := s.BruteForce(task)
+	s.mutex.Lock()
+	if s.tasks[task.Id] == nil {
+		s.tasks[task.Id] = task
+	}
+	s.tasks[task.Id].AttackCount++
+	s.mutex.Unlock()
+	return result
+}
+
+func (s *Service) UpdateStatus(task *Task) {
+	s.mutex.Lock()
+	s.tasks[task.Id].AttackCount++
+	s.mutex.Unlock()
+}
+
+func (s *Service) GetTasks() []Task {
+	taskSlice := make([]Task, 0)
+
+	for _, v := range s.tasks {
+		taskSlice = append(taskSlice, *v)
+	}
+
+	return taskSlice
+}
+
+func (s *Service) VerifyResult(result Result) bool {
+	newTask := *s.tasks[result.Id]
+	newTask.PayloadData.Count = 1
+	newTask.PayloadData.Prefix = []byte{}
+	newTask.PayloadData.Start = result.Output
+
+	return s.BruteForce(&newTask) != nil
+}
+
+func (s *Service) SetSolution(solution []byte) {
+	s.mutex.Lock()
+	s.solution = solution
+	s.mutex.Unlock()
+}
+
 func NewTaskService() Service {
 	return Service{
-		tasks: make(map[uint64]Task),
+		tasks: make(map[uint64]*Task),
 	}
 }
