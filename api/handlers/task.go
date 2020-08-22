@@ -70,7 +70,12 @@ func executeTask(taskSvc *task.Service) http.HandlerFunc {
 			return
 		}
 
-		utils.Wrap(w, map[string]interface{}{"data": result})
+		outputSlice := make([]uint16, 0)
+		for _, v := range result.Output {
+			outputSlice = append(outputSlice, uint16(v))
+		}
+
+		utils.Wrap(w, map[string]interface{}{"id": result.Id, "output": outputSlice})
 	}
 }
 

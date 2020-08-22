@@ -46,6 +46,8 @@ func (s *Service) decrypt(task *Task, key []byte) *Result {
 		if err != nil {
 			return nil
 		}
+	} else {
+		return nil
 	}
 
 	j := 0
@@ -150,6 +152,12 @@ func (s *Service) GetTasks() []Task {
 }
 
 func (s *Service) VerifyResult(result Result) bool {
+	if s.tasks[result.Id] == nil {
+		return false
+	}
+
+	s.UpdateStatus(s.tasks[result.Id])
+
 	newTask := *s.tasks[result.Id]
 	newTask.PayloadData.Count = 1
 	newTask.PayloadData.Prefix = []byte{}
