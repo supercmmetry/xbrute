@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"xbrute/api/handlers"
@@ -17,7 +18,15 @@ func main() {
 
 	fmt.Println("Listening on port: 4444")
 
-	err := http.ListenAndServe(fmt.Sprintf(":%s", "4444"), router)
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowCredentials: true,
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
+	handler := c.Handler(router)
+
+	err := http.ListenAndServe(fmt.Sprintf(":%s", "4444"), handler)
 	if err != nil {
 		log.Fatal(err)
 		return

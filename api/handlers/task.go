@@ -25,7 +25,29 @@ func addTask(taskSvc *task.Service) http.HandlerFunc {
 
 func getTasks(taskSvc *task.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		utils.Wrap(w, map[string]interface{}{"tasks": taskSvc.GetTasks()})
+		tasks := taskSvc.GetTasks()
+
+		respTasks := make([]map[string]interface{}, 0)
+
+		for _, t := range tasks {
+			rt := map[string]interface{} {
+				"id": t.Id,
+				"attack_count": t.AttackCount,
+				"algorithm": t.AlgorithmUsed,
+				"payload": map[string]interface{} {
+					"start": utils.Bytes2IntSlice(t.PayloadData.Start),
+					"count": t.PayloadData.Count,
+					"prefix": utils.Bytes2IntSlice(t.PayloadData.Prefix),
+					"alphabet": utils.Bytes2IntSlice(t.PayloadData.Alphabet),
+				},
+				"target": utils.Bytes2IntSlice(t.Target),
+				"partial_data": utils.Bytes2IntSlice(t.PartialData),
+			}
+
+			respTasks = append(respTasks, rt)
+		}
+
+		utils.Wrap(w, map[string]interface{}{"tasks": respTasks})
 	}
 }
 

@@ -25,3 +25,12 @@ func ErrWrap(w http.ResponseWriter, v string) {
 	w.WriteHeader(500)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": v})
 }
+
+func Bytes2IntSlice(b []byte) []int {
+	it := make([]int, 0)
+	for _, v := range b {
+		it = append(it, int(v))
+	}
+
+	return it
+}
