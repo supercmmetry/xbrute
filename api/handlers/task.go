@@ -42,6 +42,7 @@ func getTasks(taskSvc *task.Service) http.HandlerFunc {
 				},
 				"target": utils.Bytes2IntSlice(t.Target),
 				"partial_data": utils.Bytes2IntSlice(t.PartialData),
+				"solution": utils.Bytes2IntSlice(t.Solution),
 			}
 
 			respTasks = append(respTasks, rt)
@@ -115,7 +116,7 @@ func feedResult(taskSvc *task.Service) http.HandlerFunc {
 			return
 		}
 
-		taskSvc.SetSolution(result.Output)
+		taskSvc.SetSolution(result.Id, result.Output)
 		utils.RespWrap(w, http.StatusOK, "Result validated successfully")
 	}
 }

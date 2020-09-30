@@ -16,6 +16,7 @@ func (s *Service) AddTask(task *Task) {
 	s.mutex.Lock()
 	newId := len(s.tasks)
 	task.Id = uint64(newId)
+	task.Solution = make([]byte, 0)
 
 	s.tasks[task.Id] = task
 	s.mutex.Unlock()
@@ -166,9 +167,12 @@ func (s *Service) VerifyResult(result Result) bool {
 	return s.BruteForce(&newTask) != nil
 }
 
-func (s *Service) SetSolution(solution []byte) {
+func (s *Service) SetSolution(id uint64, solution []byte) {
 	s.mutex.Lock()
-	s.solution = solution
+    if _, ok :=	s.tasks[id]; ok {
+    	s.tasks[id].Solution = solution
+	}
+
 	s.mutex.Unlock()
 }
 
